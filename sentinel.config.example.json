@@ -1,0 +1,49 @@
+{
+  "interval_seconds": 60,
+  "db_path": "sentinel.db",
+  "status_page": "status.html",
+  "retention_days": 30,
+
+  "telegram": {
+    "comment": "Secrets are referenced by ENV VAR NAME, never written here.",
+    "bot_token_env": "SENTINEL_BOT_TOKEN",
+    "chat_id_env": "SENTINEL_CHAT_ID"
+  },
+
+  "targets": [
+    {
+      "name": "website",
+      "type": "http",
+      "target": "https://example.com",
+      "expect_status": 200,
+      "expect_text": "Example Domain",
+      "degraded_ms": 1500,
+      "cert_warn_days": 21
+    },
+    {
+      "name": "api",
+      "type": "http",
+      "target": "https://api.example.com/health",
+      "expect_status": 200,
+      "fail_threshold": 3
+    },
+    {
+      "name": "postgres",
+      "type": "tcp",
+      "target": "db.example.com:5432",
+      "timeout": 5
+    },
+    {
+      "name": "tls-cert",
+      "type": "tls",
+      "target": "example.com:443",
+      "cert_warn_days": 30
+    },
+    {
+      "name": "dns",
+      "type": "dns",
+      "target": "example.com",
+      "expect_ip": "93.184.216.34"
+    }
+  ]
+}

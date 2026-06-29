@@ -1,0 +1,5 @@
+# sentinel deliberately uses the Python standard library only — there are no
+# third-party runtime dependencies. It runs on any Python 3.10+ with nothing to
+# install. This file documents that stance (and keeps tooling happy).
+#
+# Tests use the stdlib `unittest` runner:  python -m unittest discover -s tests
