@@ -238,14 +238,38 @@ python -m sentinel status -c sentinel.config.json -o status.html
 
 Probes every target once and writes the dark-theme HTML status page. The output path comes from `-o/--output`, falling back to `status_page` in the config; if neither is set the HTML is printed to stdout (handy for piping). Great for a cron-driven static status page.
 
+### `serve` — monitor loop + live HTTP status page
+
+```bash
+python -m sentinel serve -c sentinel.config.json --port 8787
+```
+
+Runs the continuous monitor loop **and** serves the status page over HTTP in one process — no reverse proxy or static host required. `tick()` runs in a background daemon thread every `interval_seconds`; the foreground thread is a stdlib `http.server` that renders a **fresh** snapshot on each request, so the page is always current. Ctrl+C stops both cleanly.
+
+Routes:
+
+| Path | Response |
+|---|---|
+| `/` | The dark-theme HTML status page. |
+| `/status.json` | The full snapshot as JSON. |
+| `/health` | Same JSON snapshot (handy as a health endpoint / uptime probe). |
+| *anything else* | `404 Not Found`. |
+
+`--port` defaults to `8787`; `--host` defaults to all interfaces (bind to `127.0.0.1` to keep it local). Everything is standard-library only.
+
+```
+sentinel serving on http://0.0.0.0:8787 (/, /status.json, /health), watching 5 target(s) every 60s. Ctrl+C to stop.
+```
+
 ## Status page
 
 The status page is a single self-contained HTML file — inline CSS, no JavaScript, dark theme. It shows the overall status badge, a per-target table (status, address, latency, 24-hour uptime %, detail), open incidents, and the most recent events.
 
-Two ways to keep it fresh:
+Three ways to keep it fresh:
 
 - **Continuous** — set `status_page` in the config and run `python -m sentinel run`; the page is rewritten after every poll.
 - **Cron** — schedule `python -m sentinel status -o /var/www/status.html` and serve that directory from any static host (Nginx, GitHub Pages, S3, …).
+- **Live HTTP** — run `python -m sentinel serve`; the built-in stdlib server monitors *and* serves the page (plus a JSON endpoint) with no external host.
 
 The generated `status.html` is gitignored, so it never gets committed by accident.
 
