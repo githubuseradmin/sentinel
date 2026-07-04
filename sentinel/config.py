@@ -33,6 +33,11 @@ class Settings:
     telegram_chat_id: Optional[str]
     targets: list[Target]
     retention_days: int = 30
+    # Optional TCP-connection honeypot sensor (off unless enabled in config).
+    honeypot_enabled: bool = False
+    honeypot_port: int = 2222
+    honeypot_host: str = ""
+    honeypot_banner: str = ""
 
     @property
     def telegram_enabled(self) -> bool:
@@ -92,6 +97,7 @@ def parse_config(data: dict, base_dir: Optional[Path] = None) -> Settings:
         raise ConfigError("target names must be unique")
 
     tg = data.get("telegram") or {}
+    hp = data.get("honeypot") or {}
     base_dir = base_dir or Path.cwd()
 
     def _path(value: Optional[str]) -> Optional[str]:
@@ -108,6 +114,10 @@ def parse_config(data: dict, base_dir: Optional[Path] = None) -> Settings:
         telegram_chat_id=_resolve_secret(tg, "chat_id", "chat_id_env"),
         targets=targets,
         retention_days=max(1, int(data.get("retention_days", 30))),
+        honeypot_enabled=bool(hp.get("enabled", False)),
+        honeypot_port=int(hp.get("port", 2222)),
+        honeypot_host=str(hp.get("host", "")),
+        honeypot_banner=str(hp.get("banner", "")),
     )
 
 

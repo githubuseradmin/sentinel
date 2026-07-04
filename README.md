@@ -11,6 +11,7 @@ English | [Русский](README.ru.md)
 - **Latency-aware** — a target that responds but is slower than `degraded_ms` is marked DEGRADED rather than UP.
 - **Telegram alerts** out of the box, on top of console output. Alerts fire only on state *transitions* (continuous mode), so you get one message per incident, not one per poll.
 - **SQLite history** — events, samples (for uptime %), and open/closed incidents.
+- **Optional intrusion honeypot** — a low-interaction TCP listener (e.g. on the SSH port) that grants **no** access but logs who connects and their client banner, emitting `intrusion` events into the same store / alerts / status page. sentinel's second sensor — still standard-library only, and a burst of new sources is aggregated into one alert instead of spamming you.
 - **Static HTML status page** — a self-contained, dark-theme, no-JavaScript page you can drop on any static host.
 - **cron / CI friendly** — a one-shot `check` command exits `0` / `1` / `2` for up / degraded / down.
 - **Secrets stay out of the repo** — the Telegram bot token is referenced by *environment-variable name* in the config, never written into the file.
@@ -21,7 +22,7 @@ English | [Русский](README.ru.md)
 ```mermaid
 flowchart LR
     U["uptime sensor<br/>HTTP · TCP · TLS · DNS"] -->|events| C
-    H["ssh honeypot<br/>(future sensor)"] -.->|events| C
+    H["honeypot sensor<br/>(optional)"] -->|intrusion events| C
     C{{"sentinel core"}}
     C --> SM["state machine<br/>debounce / hysteresis"]
     C --> DB[("SQLite<br/>events · samples · incidents")]
@@ -113,6 +114,17 @@ The config is a single JSON file. Global settings sit at the top; `targets` is a
 
 `telegram` is optional; Telegram alerting turns on only when both the bot token and chat id resolve to non-empty values. (For convenience the loader also accepts inline `bot_token` / `chat_id` literals, but the env-var-name form is the intended, repo-safe one.)
 
+### Honeypot (optional intrusion sensor)
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `honeypot.enabled` | bool | `false` | Turn the low-interaction TCP honeypot on. |
+| `honeypot.port` | int | `2222` | Port to listen on (use ≥1024 unless running as root). |
+| `honeypot.host` | string | `""` | Bind address (empty = all interfaces). |
+| `honeypot.banner` | string | `""` | Optional banner sent on connect (e.g. `SSH-2.0-OpenSSH_8.9`) to draw out a client banner. |
+
+The listener only binds in `run` / `serve` mode (never during `check` / `status`). It grants no access — it just records each connection (an INFO event) and, on the **first** sighting of a source IP within a re-alert window, fires a **WARNING** alert; a burst of many new sources is aggregated into one summary so a scan can't spam you. Point it at a public host to catch real traffic.
+
 ### Per-target fields
 
 | Field | Type | Default | Applies to | Description |
@@ -137,6 +149,8 @@ The config is a single JSON file. Global settings sit at the top; `targets` is a
   "db_path": "sentinel.db",
   "status_page": "status.html",
   "retention_days": 30,
+
+  "honeypot": { "enabled": false, "port": 2222, "banner": "SSH-2.0-OpenSSH_8.9" },
 
   "telegram": {
     "comment": "Secrets are referenced by ENV VAR NAME, never written here.",
@@ -340,7 +354,12 @@ The pure pieces are designed to be tested without a network: `parse_host_port` a
 
 ## Extending it
 
-The sensor seam exists so the core can grow new capabilities without changing. A sensor is anything that subclasses `sentinel.sensors.Sensor` and emits `Event`s; the store, alerter and reporter handle them for free. The shipped `uptime` sensor is poll-based (`poll()` returns new events each tick). The next planned sensor is a **listener-based SSH honeypot**: it would run its own socket loop, log connection / credential attempts, and emit `intrusion` events through the very same core — landing in the same SQLite store, the same Telegram alerts, and the same status page. The `Event.kind` field already anticipates this (`"state_change"`, `"cert_expiring"`, `"intrusion"`).
+The sensor seam exists so the core can grow new capabilities without changing. A sensor is anything that subclasses `sentinel.sensors.Sensor` and emits `Event`s; the store, alerter and reporter handle them for free. Two sensors ship today, and they prove the seam works for both styles:
+
+- **`uptime`** — *poll-based*: `poll()` runs the checks and returns new events each tick.
+- **`honeypot`** — *listener-based*: a background socket server captures connections and buffers them; `poll()` drains that buffer into `intrusion` events. It lands in the same SQLite store, the same Telegram alerts, and the same status page.
+
+Adding a third sensor means writing one `poll()` — the core is untouched. The `Event.kind` field spans them (`"state_change"`, `"cert_expiring"`, `"honeypot_hit"`, `"intrusion"`).
 
 ## License
 

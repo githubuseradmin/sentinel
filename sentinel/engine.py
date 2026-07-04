@@ -34,6 +34,18 @@ class Engine:
         self.alerter = build_alerter(settings)
         self.uptime = UptimeSensor(settings.targets, self.store)
         self.sensors = [self.uptime]
+        # Optional intrusion sensor. Constructed cheaply here; it only binds its
+        # port on the first poll(), so `check`/`status` never open a listener.
+        self.honeypot = None
+        if settings.honeypot_enabled:
+            from .sensors.honeypot import HoneypotSensor
+
+            self.honeypot = HoneypotSensor(
+                settings.honeypot_host,
+                settings.honeypot_port,
+                settings.honeypot_banner,
+            )
+            self.sensors.append(self.honeypot)
 
     # -- continuous mode -----------------------------------------------------
     def tick(self) -> None:

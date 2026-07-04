@@ -4,6 +4,14 @@
   "status_page": "status.html",
   "retention_days": 30,
 
+  "honeypot": {
+    "comment": "Optional low-interaction TCP honeypot: logs who connects and their client banner (never grants access). Set enabled=true and run on a public host to catch real scanners. Use an unprivileged port (>=1024) unless running as root.",
+    "enabled": false,
+    "port": 2222,
+    "host": "",
+    "banner": "SSH-2.0-OpenSSH_8.9"
+  },
+
   "telegram": {
     "comment": "Secrets are referenced by ENV VAR NAME, never written here.",
     "bot_token_env": "SENTINEL_BOT_TOKEN",
