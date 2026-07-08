@@ -2,6 +2,13 @@
 
 # sentinel
 
+![CI](https://github.com/githubuseradmin/sentinel/actions/workflows/ci.yml/badge.svg)
+![tests](https://img.shields.io/badge/tests-118_passing-brightgreen)
+![license](https://img.shields.io/badge/license-MIT-blue)
+![python](https://img.shields.io/badge/python-3.10%2B-blue)
+
+**[▶ Live demo](https://githubuseradmin.github.io/sentinel/)**
+
 `sentinel` — небольшой **self-hosted монитор доступности и TLS с алертами в Telegram**. Он написан на **чистой стандартной библиотеке Python** (никаких сторонних runtime-зависимостей) и работает на любом Python 3.10+ без установки чего-либо. Архитектура **плагинная и событийная**: *сенсоры* наблюдают за миром и эмитят объекты `Event` в общее ядро (SQLite-хранилище + алертер + репортер). В комплекте идёт сенсор `uptime`, который проверяет доступность по HTTP / TCP / TLS / DNS, ведёт историю в SQLite, рендерит статичную **HTML-страницу статуса** (тёмная тема) и шлёт алерты в консоль и Telegram. Секреты (токен Telegram-бота) задаются **именем переменной окружения** в JSON-конфиге, поэтому ничего чувствительного не попадает в репозиторий.
 
 Репозиторий: <https://github.com/githubuseradmin/sentinel>

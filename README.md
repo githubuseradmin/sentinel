@@ -2,6 +2,13 @@ English | [Русский](README.ru.md)
 
 # sentinel
 
+![CI](https://github.com/githubuseradmin/sentinel/actions/workflows/ci.yml/badge.svg)
+![tests](https://img.shields.io/badge/tests-118_passing-brightgreen)
+![license](https://img.shields.io/badge/license-MIT-blue)
+![python](https://img.shields.io/badge/python-3.10%2B-blue)
+
+**[▶ Live demo](https://githubuseradmin.github.io/sentinel/)**
+
 **sentinel** is a small, self-hosted uptime / TLS monitor with Telegram alerts. It probes your HTTP endpoints, TCP ports, TLS certificates and DNS records on a schedule, debounces flapping with a state machine, records history to SQLite, alerts to the console and Telegram, and renders a static dark-theme HTML status page. It is written against the Python **standard library only** — no third-party runtime dependencies, runs on any Python 3.10+ with nothing to install. The design is plugin/event-driven: *sensors* observe the world and emit `Event`s into a shared core (store + alerter + reporter), so the shipped `uptime` sensor can sit beside future sensors (an SSH honeypot is the next planned one) without touching the core.
 
 ## Features
